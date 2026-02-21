@@ -1,0 +1,12 @@
+Before submitting this file, make sure that there are no more TODO
+placeholders remaining in the file (and remove this comment too).
+
+Make a Class
+------------
+
+Q1. What’s const-correctness and why is it important?
+A1. 就是提前声明这个函数是常量的，就是后续调用它的时候，不能更改里面的参数，也就是只读属性，
+我认为很重要，原因是这告诉了开发者权限，这个函数明确不可以更改参数，防止失误操作和更好的团队协作
+
+Q2. Is your class const-correct? How do you know?
+A2. 是的，我在关键的get函数上有const说明

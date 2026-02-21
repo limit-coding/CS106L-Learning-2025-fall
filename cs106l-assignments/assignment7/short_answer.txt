@@ -1,0 +1,55 @@
+
+
+Unique Pointer
+--------------
+
+Q1. List one or two benefits of using RAII to manage memory instead manually calling `new` and `delete`.
+A1. 1.我认为这种自动管理指针的风格，有助于帮助开发者避免忘了释放内存导致的内存泄漏。
+2.然后也是函数化编程，可以更好的封装和应用，帮助实现更多功能
+3.avoid half-valid states
+4.自动调用destructor
+
+异常安全性 (Exception Safety)：手动调用 delete 时，如果程序在 new 和 delete 之间抛出异常，delete 就永远不会被执行。RAII 保证即使发生异常，析构函数也会在栈回退时自动调用，释放资源。
+
+避免资源泄漏：将资源的生命周期与对象的生命周期绑定，开发者不需要手动记忆何时释放，从根本上杜绝了忘记 delete 导致的内存泄漏。
+
+
+Q2. When implementing move semantics for a `unique_ptr`, for example in the move constructor `unique_ptr(unique_ptr&& other)`, it is essential that we set the underlying pointer of the `other` parameter to `nullptr` before exiting the function. Explain in your own words what problem would arise if we did not.
+A2. 对于实现move操作的时候，我们需要这么操作：1.把等待赋值的变量清空；2.把输入的值输入；3.然后删了输入的值
+如果不实现清空原数值的话，会陷入double free
+举例：std::unique_ptr<Node>copy=n;
+1.n与copy指向同一个内存地址
+2.n析构之后，释放内存
+3.copy也析构，double free
+4.copy被删除了两次，有问题，悬空了
+
+原理解释：unique_ptr 的核心原则是“独占”。在 Move 构造函数中，如果我们不把 other 的内部指针置为 nullptr，那么 other 和新创建的指针将同时指向同一块内存地址。
+
+后果：当 other 离开作用域时，它的析构函数会释放这块内存。随后，当新的指针也离开作用域时，它会再次尝试释放同一块内存。这会导致**二次释放（Double Free）**错误，通常会引起程序崩溃。
+
+Q3. This method of recursive deallocation through RAII works great for small lists, but may pose a problem for longer lists. Why? Hint: what is the limit for how "deep" a recursive function's call stack can grow?
+A3. 针对RAII形式的函数，如unique_ptr，我们调用的时候，会使用next的形式，一个接着一个函数析构，每个析构都需要占用内存空间；
+但是系统分配给栈空间的内存是有限的，当这样的链表特别长的时候，准备使用unique_ptr的时候，每次都要调用这么多函数，容易栈溢出
+
+核心原因：unique_ptr 释放链表节点时会触发嵌套的析构调用。每个节点的析构都会在**调用栈（Call Stack）**上占用一个栈帧（Stack Frame）。
+
+风险：系统分配给程序的栈空间通常很小（通常为 1MB - 8MB）。对于拥有数万个节点的长链表，这种递归析构会耗尽栈空间，导致栈溢出（Stack Overflow）。
+
+
+Q4. What does `std::move` do in this context? Why is it safe to use `std::move` and move semantics here?
+A4. 
+
+std::move 的本质是强制类型转换（将 lvalue 转换为 rvalue 引用）。
+它本身不移动任何东西。它的作用是允许编译器调用“移动构造函数”而不是“拷贝构造函数”。
+对于 unique_ptr 这种禁止拷贝的对象，这是转移所有权的唯一合法方式。
+
+
+唯一所有权 (Exclusive Ownership)：unique_ptr 的设计初衷是保证同一时间只有一个指针拥有内存。
+使用 std::move 后，原指针（左值）会被置空 (nullptr)。这
+确保了内存不会被两个指针同时管理，从而避免了二次释放 (Double Free)。
+
+明确的意图 (Explicit Intent)：在 C++ 中，unique_ptr 不允许隐式拷贝。
+必须显式使用 std::move，这是在告诉编译器和程序员：“我很清楚我正在放弃这个对象的所有权”。
+这种显式性增加了代码的可读性和安全性。
+
+无额外开销：它是安全的，因为它仅仅是交换了指针地址，不涉及内存的分配或实际数据的复制，执行效率极高。

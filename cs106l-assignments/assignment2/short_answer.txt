@@ -1,0 +1,16 @@
+
+Marriage Pact
+-------------
+
+Q1. It is your choice to use either an ordered or unordered set. In a few sentences, what are some of the tradeoffs between the two? Additionally, please give an example (that has not been shown in lecture) of a valid hash function that could be used to hash student names for an unordered set.
+A1. 对于第一个问题，这两个set的区别在于底层构造方式不同，set是红黑树，unordered_set是哈希表，
+set相对来说稳定，时间复杂度为O(logn),unordered_set是不稳定，时间复杂度是O(1),最差是O(n).
+取舍在于你的目的和数据的特点，set自带排序，unordered_set没有排序，如果你需要排序，使用set
+为了更快，使用后者
+还有一点就是unordered_set更消耗内存，如果你需要开销内存比较小，选set
+关于哈希函数：哈希函数可以用DJB2,就是初始的hash=5381，其他字符串hash*33+c,这样计算下来
+5381是个质数，用这个初始值能使哈希冲突减少（实验结论）
+
+Q2. Note that we are saving pointers to names in the queue, not names themselves. Why might this be desired in this problem? What happens if the original set where the names are stored goes out of scope and the pointers are referenced?
+A2. 指针相当于这个字符串的引用，把名字指针存下来，节省开销，且好辨认，若原对象被销毁，那指针变成悬空指针，会有未定义的风险
+在 C++ 中，这种风险被称为 Lifetime Issue（生命周期问题）。
